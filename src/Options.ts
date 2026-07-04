@@ -17,6 +17,7 @@ import type DeepPartial from './common/DeepPartial'
 import type { Styles } from './common/Styles'
 import type { AxisPosition } from './component/Axis'
 import type { IndicatorCreate } from './component/Indicator'
+import type { YAxisOverride } from './component/YAxis'
 import type { PaneOptions } from './pane/types'
 
 export type FormatDateType = 'tooltip' | 'crosshair' | 'xAxis'
@@ -93,11 +94,16 @@ export interface LayoutBasicParams {
   paneHeight?: number
 }
 
-export type LayoutPaneContent = string | IndicatorCreate | Array<string | IndicatorCreate>
+export interface LayoutPaneContentChildMultipleParams {
+  indicator: string | IndicatorCreate
+  yAxis?: Omit<YAxisOverride, 'paneId'>
+}
+
+export type LayoutPaneContentChild = LayoutPaneContentChildMultipleParams | string | IndicatorCreate
 
 export interface LayoutPane {
   type: 'candle' | 'indicator' | 'xAxis'
-  content?: LayoutPaneContent
+  content?: LayoutPaneContentChild[]
   options?: PaneOptions
 }
 
