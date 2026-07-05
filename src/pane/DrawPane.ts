@@ -86,7 +86,7 @@ export default abstract class DrawPane<C extends Axis = Axis> extends Pane {
     }
   }
 
-  createYAxis (axis: YAxisOverride): YAxis {
+  createOrOverrideYAxis (axis: YAxisOverride): YAxis {
     const yAxisId = axis.id ?? DEFAULT_AXIS_ID
     const yAxisName = axis.name ?? 'normal'
     const needWidget = axis.needWidget ?? true
