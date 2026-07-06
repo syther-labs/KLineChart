@@ -105,6 +105,17 @@ export default abstract class DrawPane<C extends Axis = Axis> extends Pane {
           this._yAxisWidgets.set(yAxisId, yAxisWidget)
         }
       }
+    } else if (isBoolean(axis.needWidget) && isValid(yAxis)) {
+      const yAxisWidget = this._yAxisWidgets.get(yAxisId)
+      if (axis.needWidget && !isValid(yAxisWidget)) {
+        const newYAxisWidget = this.createYAxisWidget(this.getContainer(), yAxis)
+        if (isValid(newYAxisWidget)) {
+          this._yAxisWidgets.set(yAxisId, newYAxisWidget)
+        }
+      } else if (!axis.needWidget && isValid(yAxisWidget)) {
+        yAxisWidget.destroy()
+        this._yAxisWidgets.delete(yAxisId)
+      }
     }
     if (!isValid(yAxis)) {
       throw new Error('create yAxis failed.')
