@@ -30,7 +30,7 @@ KLineChart - llms.txt
   - `ds` 可以是容器 `HTMLElement` 或容器 id（`string`）
   - 容器必须有明确的宽高，否则图表可能不可见
   - 初始化失败时返回 `null`（容器不存在时会报错）
-  - `options` 支持 `layout`（预置 pane/指标）、`locale`、`timezone`、`styles` 等
+  - `options` 支持 `layout`（默认柱间距、窗口和 y 轴配置）、`locale`、`timezone`、`styles` 等
 - `dispose(dcs: HTMLElement | Chart | string): void`
   - 销毁图表实例并移除容器关联节点
 
@@ -83,10 +83,9 @@ init 时预置布局示例：
 ```ts
 init(container, {
   layout: {
-    panes: [
-      { type: 'candle' },
-      { type: 'indicator', content: ['MA', 'VOL'] }
-    ]
+    barSpaceLimit: { min: 2, max: 40 },
+    pane: { minHeight: 120 },
+    yAxis: { position: 'right' }
   },
   locale: 'zh-CN',
   timezone: 'Asia/Shanghai',
@@ -166,7 +165,7 @@ init(container, {
 
 - 自定义指标的流程：生成“指标信息”，然后通过图表 API 全局添加 `registerIndicator`
 - 注册成功后，就可以像使用内置指标一样调用 `chart.createIndicator(...)`
-- `createIndicator(indicator, options?)` 通过 `options.pane` 指定窗口，通过 `options.yAxis` 指定指标绑定的 y 轴
+- `createIndicator(indicator, isStack?)` 创建指标；通过 `indicator.paneId` 指定窗口，通过 `indicator.yAxisId` 指定指标绑定的 y 轴
 - 可叠在主图的指标：`BBI`、`BOLL`、`EMA`、`MA`、`SAR`、`SMA`
 - `setPaneOptions(options)` 只设置窗口自身属性，坐标轴配置使用 `overrideYAxis(options)` 或 `overrideXAxis(options)`
 - 示例位置：`src/extension/indicator`

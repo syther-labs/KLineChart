@@ -1,14 +1,14 @@
 import { init } from 'klinecharts'
 
-const chart = init('createIndicator-paneOptions-axis-chart')
-chart.createIndicator('MA', {
-  pane: { id: 'candle_pane' },
-  yAxis: {
-    createTicks: ({ defaultTicks }) => {
-      return defaultTicks.map(
-        ({ coord, value, text }) => ({ coord, value, text: `$${text}` })
-      )
-    }
+const chart = init('createIndicator-y-axis-chart')
+chart.createIndicator({ name: 'MA', paneId: 'candle_pane', yAxisId: 'ma_axis' })
+chart.overrideYAxis({
+  paneId: 'candle_pane',
+  id: 'ma_axis',
+  createTicks: ({ defaultTicks }) => {
+    return defaultTicks.map(
+      ({ coord, value, text }) => ({ coord, value, text: `$${text}` })
+    )
   }
 })
 

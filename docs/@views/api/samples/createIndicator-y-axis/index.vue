@@ -5,7 +5,7 @@ import { data } from './index.data'
 
 <template>
   <ChartPreview
-    title="createIndicator-paneOptions-axis"
-    chartId="createIndicator-paneOptions-axis-chart"
+    title="createIndicator-y-axis"
+    chartId="createIndicator-y-axis-chart"
     :code="data.js"/>
 </template>

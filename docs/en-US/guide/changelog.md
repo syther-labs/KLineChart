@@ -1,5 +1,9 @@
 # 📠 Change Log
 
+## Unreleased
++ 👉 In the chart method `init(ds, options)`, `options.layout` is adjusted to a default layout configuration object that supports `barSpaceLimit`, `pane`, and `yAxis`.
++ 👉 The instance method `createIndicator(indicator, options?)` is adjusted to `createIndicator(indicator, isStack?)`; specify the indicator pane and y-axis with `indicator.paneId` and `indicator.yAxisId`.
+
 ## 10.0.0-beta3
 `2026-06-03`
 + 🆕 Support custom hot keys.

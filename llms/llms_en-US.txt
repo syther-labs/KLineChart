@@ -78,7 +78,7 @@ Instance‑level APIs configure a specific chart and drive interactions. All mar
   - `setLeftMinVisibleBarCount.md`, `setRightMinVisibleBarCount.md`
 - **Indicators and overlays**
   - `createIndicator.md`, `overrideIndicator.md`, `removeIndicator.md`, `getIndicators.md`
-  - `createIndicator(indicator, options?)` uses `options.pane` and `options.yAxis` for pane/y-axis placement.
+  - `createIndicator(indicator, isStack?)` creates indicators; use `indicator.paneId` and `indicator.yAxisId` for pane/y-axis placement.
   - Stackable on main chart: `BBI`, `BOLL`, `EMA`, `MA`, `SAR`, `SMA`.
   - `createOverlay.md`, `overrideOverlay.md`, `removeOverlay.md`, `getOverlays.md`
 - **Locale / timezone / formatting**
@@ -214,8 +214,8 @@ import { init } from 'klinecharts'
 
 const chart = init('createIndicator-basic-chart')
 
-// Create MA on the candle pane (overlay)
-chart.createIndicator('MA', { pane: { id: 'candle_pane' } })
+// Create MA on the candle pane
+chart.createIndicator({ name: 'MA', paneId: 'candle_pane' })
 
 // Create a volume indicator on a separate pane
 chart.createIndicator('VOL')

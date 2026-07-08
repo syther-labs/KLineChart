@@ -114,7 +114,7 @@ CDN: `klinecharts.init(...)` / `klinecharts.dispose(...)`
 
 ```ts
 chart.createIndicator('MACD')  // separate pane
-chart.createIndicator('MA', { isStack: true, pane: { id: 'candle_pane' } })  // stack on main chart
+chart.createIndicator({ name: 'MA', paneId: 'candle_pane' }, true)  // stack on main chart
 
 chart.createOverlay('segment')  // interactive drawing
 chart.createOverlay({ name: 'priceLine', points: [{ timestamp, value }] })  // programmatic
@@ -146,10 +146,9 @@ Action types: `onCrosshairChange`, `onCandleBarClick`, `onZoom`, `onScroll`, `on
 ```ts
 init(container, {
   layout: {
-    panes: [
-      { type: 'candle' },
-      { type: 'indicator', content: ['MA', 'VOL'] }
-    ]
+    barSpaceLimit: { min: 2, max: 40 },
+    pane: { minHeight: 120 },
+    yAxis: { position: 'right' }
   },
   locale: 'zh-CN',
   timezone: 'Asia/Shanghai',

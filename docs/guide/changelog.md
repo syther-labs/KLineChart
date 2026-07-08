@@ -1,5 +1,9 @@
 # 📠 更新日志
 
+## 未发布
++ 👉 图表方法 `init(ds, options)` 中的 `options.layout` 调整为默认布局配置对象，支持 `barSpaceLimit`、`pane` 和 `yAxis`。
++ 👉 实例方法 `createIndicator(indicator, options?)` 调整为 `createIndicator(indicator, isStack?)`，指标窗口和 y 轴分别通过 `indicator.paneId` 和 `indicator.yAxisId` 指定。
+
 ## 10.0.0-beta3
 `2026-06-03`
 + 🆕 支持自定义快捷键。
