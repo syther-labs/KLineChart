@@ -13,7 +13,6 @@
  */
 
 import type DeepRequired from '../common/DeepRequired'
-import type PickRequired from '../common/PickRequired'
 
 import { createDom } from '../common/utils/dom'
 import { getPixelRatio } from '../common/utils/canvas'
@@ -31,7 +30,7 @@ import type { YAxis, YAxisOverride } from '../component/YAxis'
 import type DrawWidget from '../widget/DrawWidget'
 import type YAxisWidget from '../widget/YAxisWidget'
 
-import { type PaneOptions, PANE_DEFAULT_HEIGHT, PANE_MIN_HEIGHT, PaneIdConstants } from './types'
+import { type PaneOptions, PaneIdConstants } from './types'
 import Pane from './Pane'
 
 import type Chart from '../Chart'
@@ -42,23 +41,16 @@ export default abstract class DrawPane<C extends Axis = Axis> extends Pane {
   private readonly _yAxisComponents = new Map<string, YAxis>()
   private _yAxesBounding: Record<string, Partial<Bounding>> = {}
 
-  private readonly _options: DeepRequired<PaneOptions> = {
-    id: '',
-    minHeight: PANE_MIN_HEIGHT,
-    dragEnabled: true,
-    order: 0,
-    height: PANE_DEFAULT_HEIGHT,
-    state: 'normal'
-  }
+  private readonly _options: PaneOptions
 
-  constructor (chart: Chart, options: PickRequired<PaneOptions, 'id'>) {
+  constructor (chart: Chart, options: PaneOptions) {
     super(chart, options.id)
     const container = this.getContainer()
     this._mainWidget = this.createMainWidget(container)
-    this.setOptions(options)
+    this._options = options
   }
 
-  setOptions (options: PaneOptions): this {
+  setOptions (options: Partial<PaneOptions>): this {
     merge(this._options, options)
     if (isNumber(options.height) && options.height > 0) {
       this.setBounding({ height: this._options.height })

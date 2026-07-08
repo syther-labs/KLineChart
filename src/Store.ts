@@ -36,9 +36,9 @@ import { logWarn } from './common/utils/logger'
 import { UpdateLevel } from './common/Updater'
 import type { DataLoader, DataLoaderGetBarsParams, DataLoadMore, DataLoadType } from './common/DataLoader'
 
-import type { Options, Formatter, ThousandsSeparator, DecimalFold, FormatDateType, FormatDateParams, FormatBigNumber, FormatExtendText, FormatExtendTextParams, ZoomAnchor, ZoomAnchorType, LayoutBasicParams, Hotkey } from './Options'
+import type { Options, Formatter, ThousandsSeparator, DecimalFold, FormatDateType, FormatDateParams, FormatBigNumber, FormatExtendText, FormatExtendTextParams, ZoomAnchor, ZoomAnchorType, Hotkey, Layout } from './Options'
 
-import type { IndicatorOverride, IndicatorCreate, IndicatorFilter, Indicator } from './component/Indicator'
+import type { IndicatorOverride, IndicatorCreate, IndicatorFilter } from './component/Indicator'
 import type IndicatorImp from './component/Indicator'
 import { getIndicatorClass } from './extension/indicator/index'
 
@@ -48,24 +48,11 @@ import { getOverlayInnerClass } from './extension/overlay/index'
 
 import { getStyles as getExtensionStyles } from './extension/styles/index'
 
-import { PaneIdConstants, PANE_DEFAULT_HEIGHT, PANE_MIN_HEIGHT } from './pane/types'
+import { PaneIdConstants } from './pane/types'
 
 import type Chart from './Chart'
 import type ExcludePickPartial from './common/ExcludePickPartial'
-
-const BarSpaceLimitConstants = {
-  MIN: 1,
-  MAX: 50
-}
-
-const DEFAULT_LAYOUT_BASIC_PARAMS: Required<LayoutBasicParams> = {
-  barSpaceLimitMin: BarSpaceLimitConstants.MIN,
-  barSpaceLimitMax: BarSpaceLimitConstants.MAX,
-  yAxisPosition: 'right',
-  yAxisInside: false,
-  paneMinHeight: PANE_MIN_HEIGHT,
-  paneHeight: PANE_DEFAULT_HEIGHT
-}
+import type DeepRequired from './common/DeepRequired'
 
 type ScrollLimitRole = 'bar_count' | 'distance'
 
@@ -272,8 +259,6 @@ export default class StoreImp implements Store {
    */
   private _gapBarSpace: number
 
-  private readonly _layoutBasicParams = { ...DEFAULT_LAYOUT_BASIC_PARAMS }
-
   /**
    * Distance from the last data to the right of the drawing area
    */
@@ -387,11 +372,39 @@ export default class StoreImp implements Store {
     figure: null
   }
 
+  /**
+   * Default layout params
+   */
+  private readonly _layoutOptions: DeepRequired<Layout> = {
+    barSpaceLimit: {
+      min: 1,
+      max: 50
+    },
+    pane: {
+      minHeight: 30,
+      dragEnabled: true,
+      order: 0,
+      height: 100,
+      state: 'normal'
+    },
+    yAxis: {
+      reverse: false,
+      inside: false,
+      position: 'right',
+      scrollZoomEnabled: true,
+      needWidget: true,
+      gap: {
+        top: 0.2,
+        bottom: 0.1
+      }
+    }
+  }
+
   constructor (chart: Chart, options?: Options) {
     this._chart = chart
     const { styles, locale, timezone, formatter, thousandsSeparator, decimalFold, zoomAnchor, hotkey, layout } = options ?? {}
-    if (isValid(layout) && !isArray(layout)) {
-      merge(this._layoutBasicParams, layout.basicParams)
+    if (isValid(layout)) {
+      merge(this._layoutOptions, layout)
     }
     this._calcOptimalBarSpace()
     this._lastBarRightSideDiffBarCount = this._offsetRightDistance / this._barSpace
@@ -812,8 +825,8 @@ export default class StoreImp implements Store {
 
   setBarSpace (barSpace: number, adjustBeforeFunc?: () => void): void {
     if (
-      barSpace < this._layoutBasicParams.barSpaceLimitMin ||
-      barSpace > this._layoutBasicParams.barSpaceLimitMax ||
+      barSpace < this._layoutOptions.barSpaceLimit.min ||
+      barSpace > this._layoutOptions.barSpaceLimit.max ||
       this._barSpace === barSpace
     ) {
       return
@@ -831,8 +844,8 @@ export default class StoreImp implements Store {
     })
   }
 
-  getLayoutBasicParams (): Required<LayoutBasicParams> {
-    return this._layoutBasicParams
+  getLayoutOptions (): DeepRequired<Layout> {
+    return this._layoutOptions
   }
 
   setTotalBarSpace (totalSpace: number): void {
@@ -1357,7 +1370,7 @@ export default class StoreImp implements Store {
     }
   }
 
-  addIndicator (create: ExcludePickPartial<Indicator, 'id' | 'name' | 'paneId'>, isStack: boolean): boolean {
+  addIndicator (create: ExcludePickPartial<IndicatorCreate, 'id' | 'name' | 'paneId'>, isStack: boolean): boolean {
     const { name } = create
     const filterIndicators = this.getIndicatorsByFilter(create)
     if (filterIndicators.length > 0) {

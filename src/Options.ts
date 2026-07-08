@@ -12,11 +12,11 @@
  * limitations under the License.
  */
 
+import type { BarSpaceLimit } from './common/BarSpace'
 import type { KLineData } from './common/Data'
 import type DeepPartial from './common/DeepPartial'
+import type DeepRequired from './common/DeepRequired'
 import type { Styles } from './common/Styles'
-import type { AxisPosition } from './component/Axis'
-import type { IndicatorCreate } from './component/Indicator'
 import type { YAxisOverride } from './component/YAxis'
 import type { PaneOptions } from './pane/types'
 
@@ -85,27 +85,10 @@ export interface ZoomAnchor {
   xAxis: ZoomAnchorType
 }
 
-export interface LayoutBasicParams {
-  barSpaceLimitMin?: number
-  barSpaceLimitMax?: number
-  yAxisPosition?: AxisPosition
-  yAxisInside?: boolean
-  paneMinHeight?: number
-  paneHeight?: number
-}
-
-export type LayoutPaneContent = string | IndicatorCreate | Array<string | IndicatorCreate>
-
-export interface LayoutPane {
-  type: 'candle' | 'indicator' | 'xAxis'
-  content?: LayoutPaneContent
-  pane?: Omit<PaneOptions, 'id'>
-  yAxis?: Omit<YAxisOverride, 'id'>
-}
-
 export interface Layout {
-  basicParams?: LayoutBasicParams
-  panes?: LayoutPane[]
+  barSpaceLimit: BarSpaceLimit
+  pane: Omit<PaneOptions, 'id'>
+  yAxis: DeepRequired<Omit<YAxisOverride, 'id' | 'name' | 'paneId' | 'createRange' | 'createTicks'>>
 }
 
 export interface Hotkey {
@@ -122,5 +105,5 @@ export interface Options {
   decimalFold?: Partial<DecimalFold>
   zoomAnchor?: ZoomAnchorType | Partial<ZoomAnchor>
   hotkey?: Partial<Hotkey>
-  layout?: Layout
+  layout?: DeepPartial<Layout>
 }
