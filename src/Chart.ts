@@ -56,7 +56,6 @@ import type { YAxis, YAxisOverride } from './component/YAxis'
 import type { IndicatorFilter, Indicator, IndicatorCreate, IndicatorOverride } from './component/Indicator'
 import type { OverlayFilter, Overlay, OverlayCreate, OverlayOverride } from './component/Overlay'
 import type ExcludePickPartial from './common/ExcludePickPartial'
-import { DEFAULT_AXIS_ID } from './component/Axis'
 
 import { getIndicatorClass } from './extension/indicator/index'
 
@@ -69,6 +68,11 @@ export interface ConvertFilter {
   paneId?: string
   yAxisId?: string
   absolute?: boolean
+}
+
+export interface YAxisFilter {
+  paneId?: string
+  id?: string
 }
 
 export interface DomFilter {
@@ -85,6 +89,8 @@ export interface Chart extends Store {
   createOverlay: (value: string | OverlayCreate | Array<string | OverlayCreate>) => Nullable<string> | Array<Nullable<string>>
   getOverlays: (filter?: OverlayFilter) => Overlay[]
   setPaneOptions: (options: Partial<PaneOptions>) => void
+  createYAxis: (yAxis: YAxisOverride) => Nullable<string>
+  removeYAxis: (filter: YAxisFilter) => boolean
   overrideYAxis: (xAxis: YAxisOverride) => void
   overrideXAxis: (yAxis: XAxisOverride) => void
   getPaneOptions: (id?: string) => Nullable<PaneOptions> | PaneOptions[]
@@ -157,7 +163,7 @@ export default class ChartImp implements Chart {
     const layoutOptions = this._chartStore.getLayoutOptions()
     const paneOptions = layoutOptions.pane
     this._candlePane = this._createPane<CandlePane>(CandlePane, { ...paneOptions, id: PaneIdConstants.CANDLE })
-    this._candlePane.createOrOverrideYAxis({ ...layoutOptions.yAxis, id: DEFAULT_AXIS_ID })
+    this._candlePane.createOrOverrideYAxis({ ...layoutOptions.yAxis, id: createId('normal') })
     this._xAxisPane = this._createPane<XAxisPane>(XAxisPane, { ...paneOptions, id: PaneIdConstants.X_AXIS, order: Number.MAX_SAFE_INTEGER })
     this._layout()
     this._initResizeListener()
@@ -737,14 +743,15 @@ export default class ChartImp implements Chart {
         return
       }
       const usedYAxisIds = new Set<string>()
-      if (paneId === PaneIdConstants.CANDLE) {
-        usedYAxisIds.add(DEFAULT_AXIS_ID)
+      const defaultYAxisId = pane.getDefaultYAxisId()
+      if (isValid(defaultYAxisId)) {
+        usedYAxisIds.add(defaultYAxisId)
       }
       this._chartStore.getIndicatorsByPaneId(paneId).forEach(indicator => {
         usedYAxisIds.add(indicator.yAxisId)
       })
       pane.getYAxisComponents().forEach(yAxis => {
-        if (!usedYAxisIds.has(yAxis.id)) {
+        if (!usedYAxisIds.has(yAxis.id) && !pane.isManualYAxis(yAxis.id)) {
           changed = pane.removeYAxis(yAxis.id) || changed
         }
       })
@@ -774,7 +781,8 @@ export default class ChartImp implements Chart {
 
     indicator.id ??= createId(indicator.name)
     indicator.paneId ??= createId(PaneIdConstants.INDICATOR)
-    indicator.yAxisId ??= DEFAULT_AXIS_ID
+    const indicatorPane = this.getDrawPaneById(indicator.paneId)
+    indicator.yAxisId ??= indicatorPane?.getDefaultYAxisId() ?? createId('normal')
 
     const result = this._chartStore.addIndicator(indicator as ExcludePickPartial<Indicator, 'id' | 'name' | 'paneId'>, isStack ?? false)
     if (result) {
@@ -813,7 +821,7 @@ export default class ChartImp implements Chart {
     filterIndicators.forEach(indicator => {
       const pane = this.getDrawPaneById(indicator.paneId)
       if (isValid(pane) && !pane.hasYAxisComponent(indicator.yAxisId)) {
-        pane.createOrOverrideYAxis({ ...yAxis, id: indicator.yAxisId, paneId: indicator.paneId })
+        pane.createOrOverrideYAxis({ ...yAxis, id: indicator.yAxisId })
         updated = true
       }
     })
@@ -970,23 +978,46 @@ export default class ChartImp implements Chart {
     }
   }
 
-  overrideYAxis (yAxis: YAxisOverride): void {
-    const validPaneId = isValid(yAxis.paneId)
-    const validId = isValid(yAxis.id)
-    let shouldLayout = false
+  createYAxis (yAxis: YAxisOverride): Nullable<string> {
+    const paneId = yAxis.paneId ?? PaneIdConstants.CANDLE
+    const pane = this.getDrawPaneById(paneId)
+    if (!isValid(pane) || paneId === PaneIdConstants.X_AXIS) {
+      logWarn('createYAxis', 'paneId', 'pane does not exist or does not support yAxis!!!')
+      return null
+    }
+    const id = yAxis.id ?? createId(yAxis.name ?? 'normal')
+    pane.createOrOverrideYAxis({ ...this._chartStore.getLayoutOptions().yAxis, ...yAxis, id, paneId })
+    pane.setManualYAxis(id, true)
+    this.layout({
+      measureWidth: true,
+      update: true,
+      buildYAxisTick: true,
+      forceBuildYAxisTick: true
+    })
+    return id
+  }
+
+  removeYAxis (filter: YAxisFilter): boolean {
+    const { paneId, id } = filter
+    if (!isValid(id)) {
+      logWarn('removeYAxis', 'id', 'id should not be empty!!!')
+      return false
+    }
+    let removed = false
     for (const pane of this._drawPanes) {
-      const paneId = pane.getId()
-      if ((validPaneId && paneId === yAxis.paneId) || !validPaneId) {
-        const yAxisComponents = pane.getYAxisComponents()
-        for (const component of yAxisComponents) {
-          if ((validId && yAxis.id === component.id) || !validId) {
-            pane.createOrOverrideYAxis(yAxis)
-            shouldLayout = true
-          }
+      const currentPaneId = pane.getId()
+      if (currentPaneId !== PaneIdConstants.X_AXIS && (!isValid(paneId) || currentPaneId === paneId)) {
+        if (pane.isDefaultYAxis(id) && currentPaneId === PaneIdConstants.CANDLE) {
+          continue
         }
+        const indicators = this._chartStore.getIndicatorsByPaneId(currentPaneId)
+        if (indicators.some(indicator => indicator.yAxisId === id)) {
+          continue
+        }
+        removed = pane.removeYAxis(id) || removed
       }
     }
-    if (shouldLayout) {
+    if (removed) {
       this.layout({
         measureWidth: true,
         update: true,
@@ -994,6 +1025,46 @@ export default class ChartImp implements Chart {
         forceBuildYAxisTick: true
       })
     }
+    return removed
+  }
+
+  getYAxes (filter: YAxisFilter): YAxis[] {
+    const { paneId, id } = filter
+    const name = (filter as YAxisOverride).name
+    const match = (yAxis: YAxis): boolean => {
+      if (isValid(id)) {
+        return yAxis.id === id
+      }
+      return !isValid(name) || yAxis.name === name
+    }
+    let yAxes: YAxis[] = []
+    if (isValid(paneId)) {
+      yAxes = yAxes.concat(this.getDrawPaneById(paneId)?.getYAxisComponents().filter(match) ?? [])
+    } else {
+      this._drawPanes.forEach(pane => {
+        if (pane.getId() !== PaneIdConstants.X_AXIS) {
+          yAxes = yAxes.concat(pane.getYAxisComponents().filter(match))
+        }
+      })
+    }
+    return yAxes
+  }
+
+  overrideYAxis (yAxis: YAxisOverride): void {
+    const filterYAxes = this.getYAxes({ paneId: yAxis.paneId, id: yAxis.id })
+    if (filterYAxes.length === 0) {
+      return
+    }
+
+    filterYAxes.forEach(axis => {
+      this.getDrawPaneById(axis.paneId)?.createOrOverrideYAxis({ ...yAxis, id: axis.id })
+    })
+    this.layout({
+      measureWidth: true,
+      update: true,
+      buildYAxisTick: true,
+      forceBuildYAxisTick: true
+    })
   }
 
   overrideXAxis (xAxis: XAxisOverride): void {

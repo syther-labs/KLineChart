@@ -197,9 +197,12 @@ function mountChart () {
   chart.setSymbol({ ticker: 'DEBUG', pricePrecision: 2, volumePrecision: 0 })
   chart.setPeriod(getActivePeriodConfig().period)
   chart.setDataLoader(createDataLoader())
-  chart.createIndicator('EMA', { isStack: true, pane: { id: 'candle_pane' } })
-  chart.createIndicator('SAR', { isStack: true, pane: { id: 'candle_pane' } })
-  // chart.overrideYAxis({ id: 'new1', position: 'left' })
+  // const id = chart.createIndicator('EMA', true)
+  // chart.createYAxis({ name: 'percentage', position: 'left' })
+  // chart.createIndicator('SAR', true)
+  // chart.overrideIndicator({ id, yAxisId: 'new' })
+  // chart.overrideYAxis({ id: 'new', position: 'left' })
+  chart.overrideYAxis({ paneId: 'candle_pane', name: 'percentage' })
   // chart.createOverlay('brush')
 }
 

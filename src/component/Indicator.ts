@@ -33,7 +33,6 @@ import type { RectAttrs } from '../extension/figure/rect'
 import type { TextAttrs } from '../extension/figure/text'
 import type { Chart } from '../Chart'
 import type { LineAttrs } from '../extension/figure/line'
-import { DEFAULT_AXIS_ID } from './Axis'
 
 export type IndicatorSeries = 'normal' | 'price' | 'volume'
 
@@ -325,7 +324,7 @@ export function eachFigures<D = unknown> (
 export default class IndicatorImp<D = unknown, C = unknown, E = unknown> implements Indicator<D, C, E> {
   id: string
   paneId: string
-  yAxisId = DEFAULT_AXIS_ID
+  yAxisId: string
   name: string
   shortName: string
   precision = 4

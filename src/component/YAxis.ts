@@ -25,7 +25,6 @@ import AxisImp, {
   type AxisMinSpanCallback, type AxisCreateRangeCallback,
   type AxisPosition,
   TICK_COUNT,
-  DEFAULT_AXIS_ID,
   type AxisOverride,
   type AxisTemplate
 } from './Axis'
@@ -47,7 +46,7 @@ export interface YAxis extends Axis, Required<YAxisTemplate> {
 export type YAxisConstructor = new (parent: DrawPane) => YAxis
 
 export default abstract class YAxisImp extends AxisImp implements YAxis {
-  id = DEFAULT_AXIS_ID
+  id = ''
   paneId = ''
   reverse = false
   inside = false
@@ -106,7 +105,7 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
       gap,
       ...others
     } = yAxis
-    if (isValid(id) && this.id === DEFAULT_AXIS_ID) {
+    if (isValid(id) && this.id.length === 0) {
       this.id = id
     }
     if (!isString(this.name) && isString(name)) {
@@ -141,7 +140,7 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
 
     let precision = 4
     const inCandle = this.isInCandle()
-    const isDefaultYAxis = this.id === DEFAULT_AXIS_ID
+    const isDefaultYAxis = parent.isDefaultYAxis(this.id)
     if (inCandle) {
       const pricePrecision = chartStore.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE
       if (indicatorPrecision !== Number.MAX_SAFE_INTEGER) {
@@ -309,7 +308,7 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
     const styles = chartStore.getStyles()
     let precision = 0
     let shouldFormatBigNumber = false
-    if (this.isInCandle() && this.id === DEFAULT_AXIS_ID) {
+    if (this.isInCandle() && pane.isDefaultYAxis(this.id)) {
       precision = chartStore.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE
     } else {
       indicators.forEach(indicator => {
@@ -417,7 +416,7 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
           shouldFormatBigNumber ||= indicator.shouldFormatBigNumber
         })
         let precision = 2
-        if (this.isInCandle() && this.id === DEFAULT_AXIS_ID) {
+        if (this.isInCandle() && pane.isDefaultYAxis(this.id)) {
           const lastValueMarkStyles = styles.indicator.lastValueMark
           if (lastValueMarkStyles.show && lastValueMarkStyles.text.show) {
             precision = Math.max(indicatorPrecision, pricePrecision)
