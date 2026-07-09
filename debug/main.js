@@ -198,7 +198,7 @@ function mountChart () {
   chart.setPeriod(getActivePeriodConfig().period)
   chart.setDataLoader(createDataLoader())
   // const id = chart.createIndicator('EMA', true)
-  // chart.createYAxis({ name: 'percentage', position: 'left' })
+  chart.createYAxis({ name: 'normal', position: 'left' })
   // chart.createIndicator('SAR', true)
   // chart.overrideIndicator({ id, yAxisId: 'new' })
   // chart.overrideYAxis({ id: 'new', position: 'left' })

@@ -73,6 +73,7 @@ export interface ConvertFilter {
 export interface YAxisFilter {
   paneId?: string
   id?: string
+  name?: string
 }
 
 export interface DomFilter {
@@ -986,6 +987,9 @@ export default class ChartImp implements Chart {
       return null
     }
     const id = yAxis.id ?? createId(Y_AXIS_ID_PREFIX)
+    if (pane.hasYAxisComponent(id)) {
+      return id
+    }
     pane.createOrOverrideYAxis({ ...this._chartStore.getLayoutOptions().yAxis, ...yAxis, id, paneId })
     pane.setManualYAxis(id, true)
     this.layout({
@@ -998,24 +1002,25 @@ export default class ChartImp implements Chart {
   }
 
   removeYAxis (filter: YAxisFilter): boolean {
-    const { paneId, id } = filter
-    if (!isValid(id)) {
-      logWarn('removeYAxis', 'id', 'id should not be empty!!!')
+    const { id, name } = filter
+    if (!isValid(id) && !isValid(name)) {
+      logWarn('removeYAxis', 'filter', 'id or name should not be empty!!!')
       return false
     }
     let removed = false
-    for (const pane of this._drawPanes) {
-      const currentPaneId = pane.getId()
-      if (currentPaneId !== PaneIdConstants.X_AXIS && (!isValid(paneId) || currentPaneId === paneId)) {
-        if (pane.isDefaultYAxis(id) && currentPaneId === PaneIdConstants.CANDLE) {
-          continue
-        }
-        const indicators = this._chartStore.getIndicatorsByPaneId(currentPaneId)
-        if (indicators.some(indicator => indicator.yAxisId === id)) {
-          continue
-        }
-        removed = pane.removeYAxis(id) || removed
+    for (const yAxis of this.getYAxes(filter)) {
+      const pane = this.getDrawPaneById(yAxis.paneId)
+      if (!isValid(pane)) {
+        continue
       }
+      if (pane.isDefaultYAxis(yAxis.id) && yAxis.paneId === PaneIdConstants.CANDLE) {
+        continue
+      }
+      const indicators = this._chartStore.getIndicatorsByPaneId(yAxis.paneId)
+      if (indicators.some(indicator => indicator.yAxisId === yAxis.id)) {
+        continue
+      }
+      removed = pane.removeYAxis(yAxis.id) || removed
     }
     if (removed) {
       this.layout({
@@ -1030,7 +1035,7 @@ export default class ChartImp implements Chart {
 
   getYAxes (filter: YAxisFilter): YAxis[] {
     const { paneId, id } = filter
-    const name = (filter as YAxisOverride).name
+    const name = filter.name
     const match = (yAxis: YAxis): boolean => {
       if (isValid(id)) {
         return yAxis.id === id
