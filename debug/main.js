@@ -198,11 +198,13 @@ function mountChart () {
   chart.setPeriod(getActivePeriodConfig().period)
   chart.setDataLoader(createDataLoader())
   // const id = chart.createIndicator('EMA', true)
-  chart.createYAxis({ name: 'normal', position: 'left' })
+  chart.createYAxis({ name: 'percentage', position: 'left' })
+  chart.createIndicator({ name: 'EMA', paneId: 'new' })
+  chart.createYAxis({ name: 'normal', position: 'left', paneId: 'new' })
   // chart.createIndicator('SAR', true)
   // chart.overrideIndicator({ id, yAxisId: 'new' })
   // chart.overrideYAxis({ id: 'new', position: 'left' })
-  chart.overrideYAxis({ paneId: 'candle_pane', name: 'percentage' })
+  // chart.overrideYAxis({ paneId: 'candle_pane', name: 'percentage' })
   // chart.createOverlay('brush')
 }
 
