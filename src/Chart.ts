@@ -760,6 +760,22 @@ export default class ChartImp implements Chart {
     return changed
   }
 
+  private _createOrUseIndicatorYAxis (pane: DrawPane<YAxis>, yAxisId: string): boolean {
+    let changed = false
+    if (!pane.hasYAxisComponent(yAxisId)) {
+      pane.createOrOverrideYAxis({
+        ...this._chartStore.getLayoutOptions().yAxis,
+        id: yAxisId
+      })
+      changed = true
+    }
+    if (pane.isManualYAxis(yAxisId)) {
+      pane.setManualYAxis(yAxisId, false)
+      changed = true
+    }
+    return changed
+  }
+
   resetData (): void {
     this._chartStore.resetData()
   }
@@ -793,9 +809,7 @@ export default class ChartImp implements Chart {
         pane = this._createPane(IndicatorPane, { ...this._chartStore.getLayoutOptions().pane, id: indicator.paneId })
         shouldSort = true
       }
-      if (!pane.hasYAxisComponent(indicator.yAxisId)) {
-        pane.createOrOverrideYAxis({ ...this._chartStore.getLayoutOptions().yAxis, id: indicator.yAxisId, paneId: indicator.paneId })
-      }
+      this._createOrUseIndicatorYAxis(pane, indicator.yAxisId)
       this._removeOrphanYAxes()
       this.layout({
         sort: shouldSort,
@@ -817,13 +831,10 @@ export default class ChartImp implements Chart {
     }
     let updated = this._chartStore.overrideIndicator(override)
 
-    const yAxis = this._chartStore.getLayoutOptions().yAxis
-
     filterIndicators.forEach(indicator => {
       const pane = this.getDrawPaneById(indicator.paneId)
-      if (isValid(pane) && !pane.hasYAxisComponent(indicator.yAxisId)) {
-        pane.createOrOverrideYAxis({ ...yAxis, id: indicator.yAxisId })
-        updated = true
+      if (isValid(pane)) {
+        updated = this._createOrUseIndicatorYAxis(pane, indicator.yAxisId) || updated
       }
     })
 
