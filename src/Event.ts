@@ -194,6 +194,60 @@ export default class Event implements EventHandler {
     return widget.getPane().getYAxisComponentById() as unknown as YAxisImp
   }
 
+  private _getYAxisScaleTargetByWidget (widget: Widget<DrawPane<YAxisImp>>): YAxisImp {
+    const yAxis = this._getYAxisByWidget(widget)
+    const pane = widget.getPane()
+    if (pane.isManualYAxis(yAxis.id)) {
+      return pane.getYAxisComponentById() as unknown as YAxisImp
+    }
+    return yAxis
+  }
+
+  private _syncYAxisValueRange (yAxis: YAxisImp, sourceRange: AxisRange): void {
+    const baseRange = yAxis.getRange()
+    const { from, to } = sourceRange
+    const realFrom = yAxis.valueToRealValue(from, { range: baseRange })
+    const realTo = yAxis.valueToRealValue(to, { range: baseRange })
+    const displayFrom = yAxis.realValueToDisplayValue(realFrom, { range: baseRange })
+    const displayTo = yAxis.realValueToDisplayValue(realTo, { range: baseRange })
+    yAxis.setRange({
+      from,
+      to,
+      range: to - from,
+      realFrom,
+      realTo,
+      realRange: realTo - realFrom,
+      displayFrom,
+      displayTo,
+      displayRange: displayTo - displayFrom
+    })
+  }
+
+  private _syncManualYAxesValueRange (widget: Widget<DrawPane<YAxisImp>>, sourceYAxis: YAxisImp): void {
+    const sourceRange = sourceYAxis.getRange()
+    widget.getPane().getYAxisComponents().forEach(axis => {
+      const yAxis = axis as YAxisImp
+      if (yAxis !== sourceYAxis && widget.getPane().isManualYAxis(yAxis.id)) {
+        this._syncYAxisValueRange(yAxis, sourceRange)
+      }
+    })
+  }
+
+  private _resetYAxisAndManualYAxes (widget: Widget<DrawPane<YAxisImp>>, sourceYAxis: YAxisImp): void {
+    sourceYAxis.setAutoCalcTickFlag(true)
+    widget.getPane().getYAxisComponents().forEach(axis => {
+      const yAxis = axis as YAxisImp
+      if (widget.getPane().isManualYAxis(yAxis.id)) {
+        yAxis.setAutoCalcTickFlag(true)
+      }
+    })
+    this._chart.layout({
+      measureWidth: true,
+      update: true,
+      buildYAxisTick: true
+    })
+  }
+
   pinchStartEvent (): boolean {
     this._touchZoomed = true
     this._pinchScale = 1
@@ -228,10 +282,13 @@ export default class Event implements EventHandler {
       return true
     }
     if (name === WidgetNameConstants.Y_AXIS) {
-      const yAxis = this._getYAxisByWidget(widget as Widget<DrawPane<YAxisImp>>)
+      const yAxisWidget = widget as Widget<DrawPane<YAxisImp>>
+      const yAxis = this._getYAxisByWidget(yAxisWidget)
       if (yAxis.scrollZoomEnabled) {
         const scaleFactor = 1 + scale * 0.05
-        this._zoomYAxis(yAxis, scaleFactor)
+        const targetYAxis = this._getYAxisScaleTargetByWidget(yAxisWidget)
+        this._zoomYAxis(targetYAxis, scaleFactor)
+        this._syncManualYAxesValueRange(yAxisWidget, targetYAxis)
         return true
       }
     }
@@ -426,14 +483,11 @@ export default class Event implements EventHandler {
           return widget.dispatchEvent('mouseDoubleClickEvent', event)
         }
         case WidgetNameConstants.Y_AXIS: {
-          const yAxis = this._getYAxisByWidget(widget as Widget<DrawPane<YAxisImp>>)
-          if (!yAxis.getAutoCalcTickFlag()) {
-            yAxis.setAutoCalcTickFlag(true)
-            this._chart.layout({
-              measureWidth: true,
-              update: true,
-              buildYAxisTick: true
-            })
+          const yAxisWidget = widget as Widget<DrawPane<YAxisImp>>
+          const yAxis = this._getYAxisByWidget(yAxisWidget)
+          const targetYAxis = this._getYAxisScaleTargetByWidget(yAxisWidget)
+          if (!targetYAxis.getAutoCalcTickFlag() || !yAxis.getAutoCalcTickFlag()) {
+            this._resetYAxisAndManualYAxes(yAxisWidget, targetYAxis)
             return true
           }
           break
@@ -716,7 +770,7 @@ export default class Event implements EventHandler {
     if (consumed) {
       this._chart.updatePane(UpdateLevel.Overlay)
     }
-    const yAxis = this._getYAxisByWidget(widget)
+    const yAxis = this._getYAxisScaleTargetByWidget(widget)
     const range = yAxis.getRange()
     this._prevYAxisRanges.set(yAxis, { ...range })
     this._yAxisStartScaleDistance = event.pageY
@@ -727,11 +781,13 @@ export default class Event implements EventHandler {
     const consumed = widget.dispatchEvent('pressedMouseMoveEvent', event)
     if (!consumed) {
       const yAxis = this._getYAxisByWidget(widget)
-      const prevYAxisRange = this._prevYAxisRanges.get(yAxis)
+      const targetYAxis = this._getYAxisScaleTargetByWidget(widget)
+      const prevYAxisRange = this._prevYAxisRanges.get(targetYAxis)
       if (isValid(prevYAxisRange) && yAxis.scrollZoomEnabled && this._yAxisStartScaleDistance !== 0) {
         event.preventDefault?.()
         const scaleFactor = event.pageY / this._yAxisStartScaleDistance
-        this._zoomYAxis(yAxis, scaleFactor, prevYAxisRange)
+        this._zoomYAxis(targetYAxis, scaleFactor, prevYAxisRange)
+        this._syncManualYAxesValueRange(widget, targetYAxis)
       }
     } else {
       this._chart.updatePane(UpdateLevel.Overlay)
