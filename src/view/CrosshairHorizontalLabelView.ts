@@ -70,10 +70,15 @@ export default class CrosshairHorizontalLabelView<C extends Axis = YAxis> extend
     const value = axis.convertFromPixel(crosshair.y!)
     let precision = 0
     let shouldFormatBigNumber = false
-    if (yAxis.isInCandle() && yAxis.getParent().isDefaultYAxis(yAxis.id)) {
+    if (yAxis.isInCandle()) {
       precision = chartStore.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE
     } else {
-      const indicators = chartStore.getIndicatorsByPaneId(crosshair.paneId!).filter(indicator => indicator.yAxisId === yAxis.id)
+      let yAxisId = yAxis.id
+      const pane = this.getWidget().getPane()
+      if (pane.isManualYAxis(yAxisId)) {
+        yAxisId = pane.getDefaultYAxisId() ?? yAxisId
+      }
+      const indicators = chartStore.getIndicatorsByPaneId(crosshair.paneId!).filter(indicator => indicator.yAxisId === yAxisId)
       indicators.forEach(indicator => {
         precision = Math.max(indicator.precision, precision)
         shouldFormatBigNumber ||= indicator.shouldFormatBigNumber

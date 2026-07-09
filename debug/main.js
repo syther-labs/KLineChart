@@ -186,6 +186,13 @@ function mountChart () {
   }
   dispose(chartDom)
   chart = init(chartDom, {
+    styles: {
+      indicator: {
+        lastValueMark: {
+          show: true
+        }
+      }
+    },
     layout: {
       basicParams: {
         // yAxisPosition: 'left',
@@ -194,7 +201,7 @@ function mountChart () {
       panes: [{ type: 'candle' }, { type: 'indicator', content: ['MA'] }]
     }
   })
-  chart.setSymbol({ ticker: 'DEBUG', pricePrecision: 2, volumePrecision: 0 })
+  chart.setSymbol({ ticker: 'DEBUG', pricePrecision: 4, volumePrecision: 0 })
   chart.setPeriod(getActivePeriodConfig().period)
   chart.setDataLoader(createDataLoader())
   // const id = chart.createIndicator('EMA', true)

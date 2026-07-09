@@ -50,7 +50,9 @@ export default class YAxisWidget extends DrawWidget<DrawPane<YAxis>> {
 
   override updateMain (ctx: CanvasRenderingContext2D): void {
     this._yAxisView.draw(ctx)
-    if (this.getPane().isDefaultYAxis(this._yAxis.id) && this.getAxisComponent().isInCandle()) {
+    const pane = this.getPane()
+    const isCandleLastPriceLabelVisibleYAxis = pane.isDefaultYAxis(this._yAxis.id) || pane.isManualYAxis(this._yAxis.id)
+    if (isCandleLastPriceLabelVisibleYAxis && this.getAxisComponent().isInCandle()) {
       this._candleLastPriceLabelView.draw(ctx)
     }
     this._indicatorLastValueView.draw(ctx)
