@@ -100,6 +100,12 @@ export default abstract class DrawPane<C extends Axis = Axis> extends Pane {
         const yAxisWidget = this.createYAxisWidget(this.getContainer(), yAxis)
         if (isValid(yAxisWidget)) {
           this._yAxisWidgets.set(yAxisId, yAxisWidget)
+          // Inherit the pane's current geometry. Recreating the axis (e.g. via
+          // `overrideYAxis({ name })`) destroys the old widget, and follow-up
+          // layouts only measure width, so without this the new widget keeps
+          // height 0 and the axis collapses (squashed bars, no ticks).
+          const bounding = this.getBounding()
+          yAxisWidget.setBounding({ height: bounding.height, top: bounding.top })
         }
       }
     } else if (isBoolean(axis.needWidget) && isValid(yAxis)) {
