@@ -37,6 +37,8 @@ export type YAxisTemplate = AxisTemplate
 
 export type YAxisOverride = AxisOverride & { needWidget?: boolean }
 
+export const Y_AXIS_ID_PREFIX = 'yAxis_'
+
 export interface YAxis extends Axis, Required<YAxisTemplate> {
   isFromZero: () => boolean
   isInCandle: () => boolean

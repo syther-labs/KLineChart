@@ -39,6 +39,7 @@ import type BarSpace from './common/BarSpace'
 import type PickRequired from './common/PickRequired'
 import type { SymbolInfo } from './common/SymbolInfo'
 import type { Period } from './common/Period'
+import type ExcludePickPartial from './common/ExcludePickPartial'
 
 import ChartStore, { SCALE_MULTIPLIER, type Store } from './Store'
 
@@ -51,16 +52,15 @@ import SeparatorPane from './pane/SeparatorPane'
 import { type PaneOptions, PaneIdConstants } from './pane/types'
 
 import type AxisImp from './component/Axis'
-import type { YAxis, YAxisOverride } from './component/YAxis'
+import { Y_AXIS_ID_PREFIX, type YAxis, type YAxisOverride } from './component/YAxis'
+import type { XAxisOverride } from './component/XAxis'
 
 import type { IndicatorFilter, Indicator, IndicatorCreate, IndicatorOverride } from './component/Indicator'
 import type { OverlayFilter, Overlay, OverlayCreate, OverlayOverride } from './component/Overlay'
-import type ExcludePickPartial from './common/ExcludePickPartial'
 
 import { getIndicatorClass } from './extension/indicator/index'
 
 import Event from './Event'
-import type { XAxisOverride } from './component/XAxis'
 
 export type DomPosition = 'root' | 'main' | 'yAxis'
 
@@ -163,7 +163,7 @@ export default class ChartImp implements Chart {
     const layoutOptions = this._chartStore.getLayoutOptions()
     const paneOptions = layoutOptions.pane
     this._candlePane = this._createPane<CandlePane>(CandlePane, { ...paneOptions, id: PaneIdConstants.CANDLE })
-    this._candlePane.createOrOverrideYAxis({ ...layoutOptions.yAxis, id: createId('normal') })
+    this._candlePane.createOrOverrideYAxis({ ...layoutOptions.yAxis, id: createId(Y_AXIS_ID_PREFIX) })
     this._xAxisPane = this._createPane<XAxisPane>(XAxisPane, { ...paneOptions, id: PaneIdConstants.X_AXIS, order: Number.MAX_SAFE_INTEGER })
     this._layout()
     this._initResizeListener()
@@ -779,10 +779,10 @@ export default class ChartImp implements Chart {
       return null
     }
 
-    indicator.id ??= createId(indicator.name)
+    indicator.id ??= createId(`${indicator.name}_`)
     indicator.paneId ??= createId(PaneIdConstants.INDICATOR)
     const indicatorPane = this.getDrawPaneById(indicator.paneId)
-    indicator.yAxisId ??= indicatorPane?.getDefaultYAxisId() ?? createId('normal')
+    indicator.yAxisId ??= indicatorPane?.getDefaultYAxisId() ?? createId(Y_AXIS_ID_PREFIX)
 
     const result = this._chartStore.addIndicator(indicator as ExcludePickPartial<Indicator, 'id' | 'name' | 'paneId'>, isStack ?? false)
     if (result) {
@@ -985,7 +985,7 @@ export default class ChartImp implements Chart {
       logWarn('createYAxis', 'paneId', 'pane does not exist or does not support yAxis!!!')
       return null
     }
-    const id = yAxis.id ?? createId(yAxis.name ?? 'normal')
+    const id = yAxis.id ?? createId(Y_AXIS_ID_PREFIX)
     pane.createOrOverrideYAxis({ ...this._chartStore.getLayoutOptions().yAxis, ...yAxis, id, paneId })
     pane.setManualYAxis(id, true)
     this.layout({
