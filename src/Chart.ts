@@ -92,6 +92,7 @@ export interface Chart extends Store {
   setPaneOptions: (options: Partial<PaneOptions>) => void
   createYAxis: (yAxis: YAxisOverride) => Nullable<string>
   removeYAxis: (filter: YAxisFilter) => boolean
+  getYAxes: (filter: YAxisFilter) => YAxis[]
   overrideYAxis: (xAxis: YAxisOverride) => void
   overrideXAxis: (yAxis: XAxisOverride) => void
   getPaneOptions: (id?: string) => Nullable<PaneOptions> | PaneOptions[]
