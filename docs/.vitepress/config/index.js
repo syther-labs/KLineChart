@@ -28,6 +28,12 @@ function config () {
             replacement: fileURLToPath(
               new URL('../../@components/NavbarTitle.vue', import.meta.url)
             )
+          },
+          {
+            find: /^.*\/Badge\.vue$/,
+            replacement: fileURLToPath(
+              new URL('../../@components/Badge.vue', import.meta.url)
+            )
           }
         ]
       }

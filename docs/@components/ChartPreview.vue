@@ -185,7 +185,7 @@ onMounted(() => {
           const transformJs = props.code + '\n' + `window['chart_${props.chartId}'] = chart`
           const ast = parse(transformJs, { sourceType: 'module' })
 
-          traverse(ast, {
+          traverse.default(ast, {
             CallExpression(path) {
               if (
                 t.isCallExpression(path.node) &&
@@ -202,7 +202,7 @@ onMounted(() => {
             }
           })
 
-          const { code } = transform(generator(ast, {}, transformJs).code, {
+          const { code } = transform(generator.default(ast, {}, transformJs).code, {
             presets: [
               'es2015',
               ['stage-3', { decoratorsBeforeExport: true }],
