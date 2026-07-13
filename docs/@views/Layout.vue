@@ -13,7 +13,6 @@ import HomeUsers from './home/Users.vue'
 import HomeSponsor from './home/Sponsor.vue'
 // import AsideSponsor from './AsideSponsor.vue'
 import NotFound from './NotFound.vue'
-import ColorPalette from './ColorPalette.vue'
 </script>
 
 <template>
@@ -37,9 +36,6 @@ import ColorPalette from './ColorPalette.vue'
     </template> -->
     <template #not-found>
       <NotFound/>
-    </template>
-    <template #layout-bottom>
-      <ColorPalette/>
     </template>
   </DefaultTheme.Layout>
 </template>

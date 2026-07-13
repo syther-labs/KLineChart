@@ -26,13 +26,31 @@ function config () {
           {
             find: /^.*\/VPNavBarTitle\.vue$/,
             replacement: fileURLToPath(
-              new URL('../../@components/NavbarTitle.vue', import.meta.url)
+              new URL('../../@components/NavBarTitle.vue', import.meta.url)
             )
           },
           {
             find: /^.*\/Badge\.vue$/,
             replacement: fileURLToPath(
               new URL('../../@components/Badge.vue', import.meta.url)
+            )
+          },
+          {
+            find: /^.*\/VPNavBarExtra\.vue$/,
+            replacement: fileURLToPath(
+              new URL('../../@components/NavBarExtra.vue', import.meta.url)
+            )
+          },
+          {
+            find: /^.*\/VPNavBarAppearance\.vue$/,
+            replacement: fileURLToPath(
+              new URL('../../@components/NavBarAppearance.vue', import.meta.url)
+            )
+          },
+          {
+            find: /^.*\/VPNavScreenAppearance\.vue$/,
+            replacement: fileURLToPath(
+              new URL('../../@components/NavScreenAppearance.vue', import.meta.url)
             )
           }
         ]
