@@ -175,55 +175,44 @@ onMounted(() => {
     highlightCode()
     if (!!props.chartId) {
       window.addEventListener('message', handlerMessage, false);
-      observer.value = new ResizeObserver(_ => {
-        if (!chartInitializedFlag.value) {
-          const bounding = chartContainer.value.getBoundingClientRect()
-          if (bounding.width === 0 || bounding.height === 0) {
-            return
+      chartInitializedFlag.value = true
+      const transformJs = props.code + '\n' + `window['chart_${props.chartId}'] = chart`
+      const ast = parse(transformJs, { sourceType: 'module' })
+      const tra = process.env.NODE_ENV === 'development' ? traverse.default : traverse
+      tra(ast, {
+        CallExpression(path) {
+          if (
+            t.isCallExpression(path.node) &&
+            t.isIdentifier(path.node.callee, { name: 'callback' })
+          ) {
+            const postMessageFun = t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(t.identifier('window'), t.identifier('postMessage')),
+                [t.stringLiteral(props.chartId)]
+              )
+            )
+            path.insertBefore(postMessageFun)
           }
-          chartInitializedFlag.value = true
-          const transformJs = props.code + '\n' + `window['chart_${props.chartId}'] = chart`
-          const ast = parse(transformJs, { sourceType: 'module' })
-
-          traverse.default(ast, {
-            CallExpression(path) {
-              if (
-                t.isCallExpression(path.node) &&
-                t.isIdentifier(path.node.callee, { name: 'callback' })
-              ) {
-                const postMessageFun = t.expressionStatement(
-                  t.callExpression(
-                    t.memberExpression(t.identifier('window'), t.identifier('postMessage')),
-                    [t.stringLiteral(props.chartId)]
-                  )
-                )
-                path.insertBefore(postMessageFun)
-              }
-            }
-          })
-
-          const { code } = transform(generator.default(ast, {}, transformJs).code, {
-            presets: [
-              'es2015',
-              ['stage-3', { decoratorsBeforeExport: true }],
-            ],
-            plugins: ['transform-modules-umd'],
-          })
-          const chartDom = document.createElement('div')
-          const height = `${props.chartHeight || 350}px`
-          chartDom.style.height = height
-          chartDom.id = props.chartId
-          chartContainer.value.appendChild(chartDom)
-          const script = document.createElement('script')
-          script.innerHTML = code
-          chartContainer.value.appendChild(script)
-          window[`chart_${props.chartId}`].setStyles(isDark.value ? 'dark' : 'light')
-        } else {
-          window[`chart_${props.chartId}`]?.resize()
         }
-        
       })
-      observer.value.observe(chartContainer.value)
+
+      const gen = process.env.NODE_ENV === 'development' ? generator.default : generator
+      const { code } = transform(gen(ast, {}, transformJs).code, {
+        presets: [
+          'es2015',
+          ['stage-3', { decoratorsBeforeExport: true }],
+        ],
+        plugins: ['transform-modules-umd'],
+      })
+      const chartDom = document.createElement('div')
+      const height = `${props.chartHeight || 350}px`
+      chartDom.style.height = height
+      chartDom.id = props.chartId
+      chartContainer.value.appendChild(chartDom)
+      const script = document.createElement('script')
+      script.innerHTML = code
+      chartContainer.value.appendChild(script)
+      window[`chart_${props.chartId}`].setStyles(isDark.value ? 'dark' : 'light')
     }
   }
 })
@@ -240,9 +229,6 @@ watch(isDark, (newValue) => {
 
 onUnmounted(() => {
   if (inBrowser && !!props.chartId) {
-    if (observer.value && chartContainer.value) {
-      observer.value.unobserve(chartContainer.value)
-    }
     if (window.klinecharts) {
       window.klinecharts.dispose(props.chartId)
     }

@@ -50,13 +50,13 @@
 import { computed, inject, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { inBrowser, useData } from 'vitepress'
 import { useLocalStorage } from '@vueuse/core'
-import i18n from '../@i18n'
+import i18n from '../../@i18n'
 import {
   applyThemeColorStyle,
   DEFAULT_THEME_COLOR,
   normalizeThemeColor,
   THEME_COLOR_STORAGE_KEY
-} from '../.vitepress/theme/theme-color'
+} from '../../.vitepress/theme/theme-color'
 
 const visible = ref(false)
 const { isDark, lang } = useData()

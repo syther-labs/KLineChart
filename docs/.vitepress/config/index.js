@@ -26,7 +26,7 @@ function config () {
           {
             find: /^.*\/VPNavBarTitle\.vue$/,
             replacement: fileURLToPath(
-              new URL('../../@components/NavBarTitle.vue', import.meta.url)
+              new URL('../../@components/override/NavBarTitle.vue', import.meta.url)
             )
           },
           {
@@ -38,19 +38,25 @@ function config () {
           {
             find: /^.*\/VPNavBarExtra\.vue$/,
             replacement: fileURLToPath(
-              new URL('../../@components/NavBarExtra.vue', import.meta.url)
+              new URL('../../@components/override/NavBarExtra.vue', import.meta.url)
             )
           },
           {
             find: /^.*\/VPNavBarAppearance\.vue$/,
             replacement: fileURLToPath(
-              new URL('../../@components/NavBarAppearance.vue', import.meta.url)
+              new URL('../../@components/override/NavBarAppearance.vue', import.meta.url)
             )
           },
           {
             find: /^.*\/VPNavScreenAppearance\.vue$/,
             replacement: fileURLToPath(
-              new URL('../../@components/NavScreenAppearance.vue', import.meta.url)
+              new URL('../../@components/override/NavScreenAppearance.vue', import.meta.url)
+            )
+          },
+          {
+            find: /^.*\/VPFlyout\.vue$/,
+            replacement: fileURLToPath(
+              new URL('../../@components/override/Flyout.vue', import.meta.url)
             )
           }
         ]
