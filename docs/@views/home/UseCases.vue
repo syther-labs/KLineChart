@@ -53,7 +53,8 @@ const items = computed(() =>
 
 .use-case {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   min-height: 100%;
   padding: 0;
   overflow: hidden;
@@ -73,31 +74,28 @@ const items = computed(() =>
 }
 
 .illustration-wrap {
-  flex-shrink: 0;
+  flex: 0 0 clamp(96px, 34%, 176px);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  min-height: 124px;
-  padding: 16px;
+  min-height: 100%;
+  padding: 12px 8px;
   overflow: hidden;
 }
 
-@media (min-width: 768px) {
+.illustration-wrap :deep(.use-case-illustration) {
+  width: 100%;
+  max-width: 160px;
+  height: auto;
+}
+
+@media (min-width: 960px) {
   .use-cases {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--home-grid-gap-lg);
   }
 
-  .use-case {
-    flex-direction: row;
-    align-items: stretch;
-  }
-
   .illustration-wrap {
-    width: 176px;
-    min-width: 176px;
-    min-height: 100%;
     padding: 20px 14px;
   }
 }
