@@ -42,7 +42,7 @@ export function rgbToHex (rgb: string): string {
   const r = parseInt(match[1], 10).toString(16)
   const g = parseInt(match[2], 10).toString(16)
   const b = parseInt(match[3], 10).toString(16)
-  return `#${r.length === 1 ? `0${r}` : r}${g.length === 1 ? `0${r}` : r}${b.length === 1 ? `0${r}` : r}`
+  return `#${r.length === 1 ? `0${r}` : r}${g.length === 1 ? `0${g}` : g}${b.length === 1 ? `0${b}` : b}`
 }
 
 export function hexToRgb (hex: string, alpha?: number): string {
