@@ -53,7 +53,7 @@ const items = computed(() => icons.map((_, index) => buildItem(index)))
       <article
         v-for="(item, index) in items"
         :key="item.title"
-        class="tile home-card home-card--interactive home-card-body home-stagger-item"
+        class="tile home-card home-card-body home-stagger-item"
         :class="`tile-${index + 1}`"
         :style="{ '--stagger-delay': `${index * 0.07}s` }"
       >
@@ -126,11 +126,6 @@ const items = computed(() => icons.map((_, index) => buildItem(index)))
   border-radius: 12px;
   background: color-mix(in srgb, var(--vp-c-bg) 70%, transparent);
   border: 1px solid var(--home-brand-border);
-  transition: border-color .4s var(--home-ease-out);
-}
-
-.tile:hover .metric {
-  border-color: var(--home-brand-border-hover);
 }
 
 .metric strong {
@@ -196,9 +191,4 @@ const items = computed(() => icons.map((_, index) => buildItem(index)))
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .metric {
-    transition: none;
-  }
-}
 </style>

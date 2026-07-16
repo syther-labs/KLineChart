@@ -3,11 +3,19 @@
     <div class="section">
       <div class="section-title">{{ i18n('component_appearance_mode', lang) }}</div>
       <div class="mode-options">
-        <button type="button" :class="{ active: !isDark }" @click="setAppearance(false)">
+        <button
+          type="button"
+          :class="{ active: !isDark }"
+          :aria-pressed="!isDark"
+          @click="setAppearance(false)">
           <span class="vpi-sun"/>
           <span>{{ i18n('component_appearance_light', lang) }}</span>
         </button>
-        <button type="button" :class="{ active: isDark }" @click="setAppearance(true)">
+        <button
+          type="button"
+          :class="{ active: isDark }"
+          :aria-pressed="isDark"
+          @click="setAppearance(true)">
           <span class="vpi-moon"/>
           <span>{{ i18n('component_appearance_dark', lang) }}</span>
         </button>
@@ -18,18 +26,47 @@
       <span>{{ i18n('component_color_palette_title', lang) }}</span>
       <button type="button" class="reset" @click="resetColor">{{ i18n('component_color_palette_reset', lang) }}</button>
     </div>
-    <div
-      ref="trackRef"
-      class="track-wrap"
-      @mousedown="startDrag"
-      @touchstart.prevent="startDrag">
-      <div class="track"/>
-      <button
-        type="button"
-        class="thumb"
-        :style="{ left: `${sliderPercent}%`, backgroundColor: activeColor }"
-        @mousedown.stop="startDrag"
-        @touchstart.stop.prevent="startDrag"/>
+    <button
+      type="button"
+      class="color-picker-trigger"
+      :aria-expanded="colorPickerOpen"
+      @click="colorPickerOpen = !colorPickerOpen">
+      <span class="color-preview" :style="{ backgroundColor: activeColor }"/>
+      <span>{{ activeColor }}</span>
+      <span class="vpi-chevron-down" :class="{ open: colorPickerOpen }"/>
+    </button>
+    <div v-if="colorPickerOpen" class="color-picker-panel">
+      <div
+        ref="saturationRef"
+        class="saturation-field"
+        :style="{ '--picker-hue': hueColor }"
+        @pointerdown="startPickerDrag('saturation', $event)"
+        @pointermove="movePickerDrag('saturation', $event)"
+        @pointerup="stopPickerDrag"
+        @pointercancel="stopPickerDrag">
+        <span
+          class="picker-thumb saturation-thumb"
+          :style="{ left: `${pickerSaturation}%`, top: `${100 - pickerValue}%`, backgroundColor: activeColor }"/>
+      </div>
+      <div
+        ref="hueRef"
+        class="hue-track"
+        @pointerdown="startPickerDrag('hue', $event)"
+        @pointermove="movePickerDrag('hue', $event)"
+        @pointerup="stopPickerDrag"
+        @pointercancel="stopPickerDrag">
+        <span class="picker-thumb hue-thumb" :style="{ left: `${pickerHue / 3.6}%`, backgroundColor: hueColor }"/>
+      </div>
+      <label class="hex-field">
+        <span>#</span>
+        <input
+          :value="activeColor.slice(1)"
+          maxlength="6"
+          spellcheck="false"
+          aria-label="HEX"
+          @change="selectHexColor"
+          @keydown.enter="selectHexColor">
+      </label>
     </div>
     <div class="preset">
       <button
@@ -37,7 +74,8 @@
         :key="color"
         type="button"
         class="color-item"
-        :class="{ active: activeColor === color }"
+        :aria-label="color"
+        :aria-pressed="activeColor === color"
         :style="{ color }"
         @click="selectPreset(color)">
         <span/>
@@ -47,7 +85,7 @@
 </template>
 
 <script setup>
-import { computed, inject, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { computed, inject, ref, watch, onMounted } from 'vue'
 import { inBrowser, useData } from 'vitepress'
 import { useLocalStorage } from '@vueuse/core'
 import i18n from '../../@i18n'
@@ -62,12 +100,14 @@ const visible = ref(false)
 const { isDark, lang } = useData()
 const toggleAppearance = inject('toggle-appearance', null)
 
-const trackRef = ref(null)
-
 const currentColor = useLocalStorage(THEME_COLOR_STORAGE_KEY)
-const previewColor = ref(null)
-const sliderValue = ref(0)
-const dragging = ref(false)
+const colorPickerOpen = ref(false)
+const saturationRef = ref(null)
+const hueRef = ref(null)
+const pickerHue = ref(0)
+const pickerSaturation = ref(0)
+const pickerValue = ref(0)
+const activeDrag = ref(null)
 
 const colors = [
   '#F92855',
@@ -83,22 +123,17 @@ const colors = [
 ]
 
 const finalColor = computed(() => normalizeThemeColor(currentColor.value) || DEFAULT_THEME_COLOR)
-const activeColor = computed(() => previewColor.value || finalColor.value)
-const sliderPercent = computed(() => sliderValue.value * 100)
+const activeColor = computed(() => finalColor.value)
+const hueColor = computed(() => hsvToHex(pickerHue.value, 100, 100))
 
 onMounted(() => {
   visible.value = true
-  sliderValue.value = getColorValue(finalColor.value)
-})
-
-watch(finalColor, (color) => {
-  if (!dragging.value) {
-    sliderValue.value = getColorValue(color)
-  }
+  syncPickerFromColor(finalColor.value)
 })
 
 watch(activeColor, (color) => {
   applyThemeColorStyle(color || DEFAULT_THEME_COLOR)
+  syncPickerFromColor(color || DEFAULT_THEME_COLOR)
 }, { immediate: inBrowser, flush: 'post' })
 
 function changePrimaryColor (color) {
@@ -117,149 +152,135 @@ function setAppearance (dark) {
 }
 
 function selectPreset (color) {
-  previewColor.value = null
-  sliderValue.value = getColorValue(color)
   changePrimaryColor(color)
 }
 
 function resetColor () {
-  previewColor.value = null
-  sliderValue.value = getColorValue(DEFAULT_THEME_COLOR)
   currentColor.value = DEFAULT_THEME_COLOR
 }
 
-function startDrag (event) {
-  dragging.value = true
-  updateSlider(event)
-  window.addEventListener('mousemove', onDragMove)
-  window.addEventListener('mouseup', onDragEnd)
-  window.addEventListener('touchmove', onDragMove, { passive: false })
-  window.addEventListener('touchend', onDragEnd)
+function startPickerDrag (type, event) {
+  activeDrag.value = type
+  event.currentTarget.setPointerCapture(event.pointerId)
+  updatePicker(type, event)
 }
 
-function onDragMove (event) {
-  if (!dragging.value) {
+function movePickerDrag (type, event) {
+  if (activeDrag.value === type) {
+    updatePicker(type, event)
+  }
+}
+
+function stopPickerDrag () {
+  activeDrag.value = null
+}
+
+function updatePicker (type, event) {
+  const target = type === 'hue' ? hueRef.value : saturationRef.value
+  if (!target) {
     return
   }
-  if (event.type === 'touchmove') {
-    event.preventDefault()
+  const rect = target.getBoundingClientRect()
+  const x = clamp((event.clientX - rect.left) / rect.width, 0, 1)
+  if (type === 'hue') {
+    pickerHue.value = x * 360
+  } else {
+    const y = clamp((event.clientY - rect.top) / rect.height, 0, 1)
+    pickerSaturation.value = x * 100
+    pickerValue.value = (1 - y) * 100
   }
-  updateSlider(event)
+  changePrimaryColor(hsvToHex(pickerHue.value, pickerSaturation.value, pickerValue.value))
 }
 
-function onDragEnd () {
-  if (!dragging.value) {
-    return
+function selectHexColor (event) {
+  const normalized = normalizeThemeColor(`#${event.target.value}`)
+  if (normalized) {
+    changePrimaryColor(normalized)
+  } else {
+    event.target.value = activeColor.value.slice(1)
   }
-  stopDrag()
-  changePrimaryColor(activeColor.value)
-  previewColor.value = null
 }
 
-function stopDrag () {
-  dragging.value = false
-  window.removeEventListener('mousemove', onDragMove)
-  window.removeEventListener('mouseup', onDragEnd)
-  window.removeEventListener('touchmove', onDragMove)
-  window.removeEventListener('touchend', onDragEnd)
-}
-
-function updateSlider (event) {
-  if (!trackRef.value) {
-    return
-  }
-  const point = event.touches?.[0] || event
-  const rect = trackRef.value.getBoundingClientRect()
-  const ratio = clamp((point.clientX - rect.left) / rect.width, 0, 1)
-  sliderValue.value = ratio
-  previewColor.value = getColorFromValue(ratio)
-}
-
-function getColorValue (color) {
-  const index = colors.indexOf(color)
-  if (index >= 0) {
-    return index / (colors.length - 1)
-  }
-  return findNearestValue(color)
-}
-
-function getColorFromValue (value) {
-  const scaled = value * (colors.length - 1)
-  const leftIndex = Math.floor(scaled)
-  const rightIndex = Math.min(colors.length - 1, leftIndex + 1)
-  const ratio = scaled - leftIndex
-  const left = colors[leftIndex]
-  const right = colors[rightIndex]
-  if (left === right) {
-    return left
-  }
-  return mixHexColor(left, right, ratio)
-}
-
-function mixHexColor (left, right, ratio) {
-  const l = hexToRgb(left)
-  const r = hexToRgb(right)
-  const red = Math.round(l.r + (r.r - l.r) * ratio)
-  const green = Math.round(l.g + (r.g - l.g) * ratio)
-  const blue = Math.round(l.b + (r.b - l.b) * ratio)
-  return rgbToHex(red, green, blue)
+function syncPickerFromColor (color) {
+  const { h, s, v } = rgbToHsv(hexToRgb(color))
+  pickerHue.value = h
+  pickerSaturation.value = s
+  pickerValue.value = v
 }
 
 function hexToRgb (hex) {
-  const cleanHex = hex.replace('#', '')
+  const value = hex.replace('#', '')
   return {
-    r: parseInt(cleanHex.slice(0, 2), 16),
-    g: parseInt(cleanHex.slice(2, 4), 16),
-    b: parseInt(cleanHex.slice(4, 6), 16)
+    r: parseInt(value.slice(0, 2), 16),
+    g: parseInt(value.slice(2, 4), 16),
+    b: parseInt(value.slice(4, 6), 16)
   }
 }
 
-function rgbToHex (r, g, b) {
-  return (
-    '#' +
-    [r, g, b]
-      .map(x => x.toString(16).padStart(2, '0'))
-      .join('')
-  ).toUpperCase()
-}
+function rgbToHsv ({ r, g, b }) {
+  const red = r / 255
+  const green = g / 255
+  const blue = b / 255
+  const max = Math.max(red, green, blue)
+  const min = Math.min(red, green, blue)
+  const delta = max - min
+  let hue = 0
 
-function findNearestValue (color) {
-  const target = hexToRgb(color)
-  const steps = 240
-  let bestValue = getColorValue(DEFAULT_THEME_COLOR)
-  let bestDistance = Number.POSITIVE_INFINITY
-  for (let i = 0; i <= steps; i++) {
-    const value = i / steps
-    const candidate = hexToRgb(getColorFromValue(value))
-    const distance = colorDistance(target, candidate)
-    if (distance < bestDistance) {
-      bestDistance = distance
-      bestValue = value
+  if (delta !== 0) {
+    if (max === red) {
+      hue = 60 * (((green - blue) / delta) % 6)
+    } else if (max === green) {
+      hue = 60 * ((blue - red) / delta + 2)
+    } else {
+      hue = 60 * ((red - green) / delta + 4)
     }
   }
-  return bestValue
+
+  return {
+    h: hue < 0 ? hue + 360 : hue,
+    s: max === 0 ? 0 : (delta / max) * 100,
+    v: max * 100
+  }
 }
 
-function colorDistance (left, right) {
-  const dr = left.r - right.r
-  const dg = left.g - right.g
-  const db = left.b - right.b
-  return dr * dr + dg * dg + db * db
+function hsvToHex (h, s, v) {
+  const saturation = s / 100
+  const value = v / 100
+  const chroma = value * saturation
+  const hue = (h % 360) / 60
+  const x = chroma * (1 - Math.abs((hue % 2) - 1))
+  const match = value - chroma
+  let rgb
+
+  if (hue < 1) {
+    rgb = [chroma, x, 0]
+  } else if (hue < 2) {
+    rgb = [x, chroma, 0]
+  } else if (hue < 3) {
+    rgb = [0, chroma, x]
+  } else if (hue < 4) {
+    rgb = [0, x, chroma]
+  } else if (hue < 5) {
+    rgb = [x, 0, chroma]
+  } else {
+    rgb = [chroma, 0, x]
+  }
+
+  return `#${rgb.map(channel => Math.round((channel + match) * 255).toString(16).padStart(2, '0')).join('')}`.toUpperCase()
 }
 
 function clamp (value, min, max) {
   return Math.min(max, Math.max(min, value))
 }
 
-onBeforeUnmount(() => {
-  stopDrag()
-})
-
 </script>
 
 <style scoped>
   .appearance-settings {
-    width: 216px;
+    width: 224px;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .section-title,
@@ -268,8 +289,9 @@ onBeforeUnmount(() => {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 10px;
+    line-height: 18px;
     color: var(--vp-c-text-1);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
   }
 
@@ -280,31 +302,52 @@ onBeforeUnmount(() => {
   .mode-options {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
+    gap: 3px;
+    padding: 3px;
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 7px;
+    background: var(--vp-c-bg-soft);
   }
 
   .mode-options button {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 7px;
     height: 32px;
-    border: 1px solid var(--vp-c-divider);
-    border-radius: 6px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 4px;
     color: var(--vp-c-text-2);
-    background: var(--vp-c-bg-soft);
+    background: transparent;
     cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color .2s, color .2s, box-shadow .2s;
+  }
+
+  .mode-options button:hover {
+    color: var(--vp-c-text-1);
   }
 
   .mode-options button.active {
-    border-color: var(--vp-c-indigo-1);
-    color: var(--vp-c-text-1);
-    box-shadow: inset 0 0 0 1px var(--vp-c-indigo-1);
+    color: var(--vp-c-indigo-1);
+    background: var(--vp-c-bg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+  }
+
+  .mode-options button:focus-visible,
+  .reset:focus-visible,
+  .color-picker-trigger:focus-visible,
+  .hex-field input:focus-visible,
+  .color-item:focus-visible {
+    outline: 2px solid var(--vp-c-indigo-1);
+    outline-offset: 2px;
   }
 
   .divider {
     height: 1px;
-    margin: 12px 0;
+    margin: 14px 0;
     background: var(--vp-c-divider);
   }
 
@@ -314,87 +357,170 @@ onBeforeUnmount(() => {
     color: var(--vp-c-indigo-1);
     cursor: pointer;
     padding: 0;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 18px;
+    transition: opacity .2s;
   }
 
-  .track-wrap {
-    position: relative;
-    height: 18px;
-    margin: 2px 2px 14px;
+  .reset:hover {
+    opacity: .72;
+  }
+
+  .color-picker-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 34px;
+    margin-bottom: 10px;
+    width: 100%;
+    padding: 3px 9px 3px 3px;
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: var(--vp-c-text-2);
+    background-color: var(--vp-c-bg);
     cursor: pointer;
-    user-select: none;
+    font-family: var(--vp-font-family-mono);
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
   }
 
-  .track {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 8px;
+  .color-preview {
+    width: 32px;
+    height: 26px;
+    flex: none;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08);
+  }
+
+  .color-picker-trigger .vpi-chevron-down {
+    margin-left: auto;
+    transition: transform .2s;
+  }
+
+  .color-picker-trigger .vpi-chevron-down.open {
+    transform: rotate(-90deg);
+  }
+
+  .color-picker-panel {
+    display: grid;
+    gap: 10px;
+    margin: -2px 0 10px;
+    padding: 10px;
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 6px;
+    background-color: var(--vp-c-bg);
+  }
+
+  .saturation-field {
+    position: relative;
+    height: 112px;
+    border-radius: 4px;
+    background:
+      linear-gradient(to top, #000, transparent),
+      linear-gradient(to right, #fff, transparent),
+      var(--picker-hue);
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  .hue-track {
+    position: relative;
+    height: 10px;
+    margin: 3px 5px;
     border-radius: 999px;
-    transform: translateY(-50%);
-    background: linear-gradient(
-      90deg,
-      #F92855 0%,
-      #EC4899 11%,
-      #F17313 22%,
-      #E6AC00 33%,
-      #2DC08E 44%,
-      #84CC16 55%,
-      #1677FF 66%,
-      #3FB5FB 77%,
-      #A14DFD 88%,
-      #8F6CEE 100%
-    );
+    background: linear-gradient(to right, #F00, #FF0, #0F0, #0FF, #00F, #F0F, #F00);
+    cursor: pointer;
+    touch-action: none;
   }
 
-  .thumb {
+  .picker-thumb {
     position: absolute;
-    top: 50%;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #fff;
     border-radius: 50%;
-    border: solid 2px #fff;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, .18), 0 3px 8px rgba(0, 0, 0, .16);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .25);
     transform: translate(-50%, -50%);
-    cursor: grab;
-    padding: 0;
+    pointer-events: none;
   }
 
-  .thumb:active {
-    cursor: grabbing;
+  .saturation-thumb {
+    top: 0;
+  }
+
+  .hue-thumb {
+    top: 50%;
+  }
+
+  .hex-field {
+    display: flex;
+    align-items: center;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 5px;
+    color: var(--vp-c-text-3);
+    font-family: var(--vp-font-family-mono);
+    font-size: 14px;
+  }
+
+  .hex-field input {
+    min-width: 0;
+    width: 100%;
+    padding: 0 0 0 2px;
+    border: 0;
+    outline: 0;
+    color: var(--vp-c-text-1);
+    background: transparent;
+    font: inherit;
+    text-transform: uppercase;
+  }
+
+  .hex-field:has(input:focus-visible) {
+    border-color: var(--vp-c-indigo-1);
+  }
+
+  .hex-field input:focus-visible {
+    outline: none;
   }
 
   .preset {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(5, 14px);
+    justify-content: space-between;
+    row-gap: 4px;
   }
 
   .color-item {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
+    width: 14px;
     height: 24px;
+    margin: 0 auto;
     padding: 0;
-    border-radius: 50%;
-    border: solid 1px transparent;
+    border: 0;
     box-sizing: border-box;
     background: transparent;
     cursor: pointer;
   }
 
+  .color-item::before {
+    content: '';
+    position: absolute;
+    inset: 0 -5px;
+  }
+
   .color-item span {
+    flex: none;
     width: 14px;
     height: 14px;
     border-radius: 50%;
     background-color: currentColor;
-  }
-
-  .color-item.active {
-    border-color: currentColor;
-    box-shadow: 0 0 0 1px currentColor;
   }
 
 </style>

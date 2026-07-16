@@ -29,7 +29,7 @@ const items = computed(() =>
       <article
         v-for="(item, index) in items"
         :key="item.title"
-        class="use-case home-card home-card--interactive home-stagger-item"
+        class="use-case home-card home-stagger-item"
         :style="{ '--stagger-delay': `${index * 0.07}s` }"
       >
         <div class="use-case-body home-card-body">

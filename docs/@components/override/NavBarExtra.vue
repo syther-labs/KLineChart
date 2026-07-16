@@ -98,7 +98,14 @@ const hasExtraContent = computed(
 }
 
 .item.appearance {
-  min-width: 176px;
+  width: 248px;
+  max-width: calc(100vw - 48px);
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.item.appearance :deep(.appearance-settings) {
+  width: 100%;
 }
 
 .appearance-action {

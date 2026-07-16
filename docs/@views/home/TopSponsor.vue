@@ -1,16 +1,20 @@
 <script setup>
+import { computed } from 'vue'
 import { useData } from 'vitepress'
 
 import i18n from '../../@i18n'
 
 const { isDark, lang } = useData()
+const link = computed(() =>
+  lang.value === 'en-US' ? '/en-US/sponsor' : '/sponsor'
+)
 </script>
 
 <template>
   <div class="top-sponsor">
     <a
-      class="top-sponsor-link home-card home-card--interactive home-card--overflow-visible home-reveal-auto"
-      href="https://www.tradingx.cloud/"
+      class="top-sponsor-link home-card home-card--link home-card--overflow-visible home-reveal-auto"
+      :href="link"
       target="_blank"
       rel="noopener noreferrer"
     >
@@ -18,9 +22,9 @@ const { isDark, lang } = useData()
         <span>{{ i18n('view_home_top_sponsor', lang) }}</span>
         <em>TOP</em>
       </div>
-      <div class="brand">
+      <!-- <div class="brand">
         <img :class="{ invert: isDark }" src="/images/sponsors/tradingx.png" alt="tradingx">
-      </div>
+      </div> -->
       <p class="desc">{{ i18n('view_home_top_sponsor_desc', lang) }}</p>
     </a>
   </div>
@@ -59,7 +63,7 @@ const { isDark, lang } = useData()
   position: absolute;
   top: 0;
   left: 50%;
-  z-index: 3;
+  z-index: 9;
   transform: translate(-50%, -50%);
   align-items: center;
   gap: 10px;
@@ -69,11 +73,6 @@ const { isDark, lang } = useData()
   border-radius: 999px;
   border: 1px solid var(--home-brand-border);
   background: var(--home-brand-surface-soft);
-  transition: border-color .4s var(--home-ease-out);
-}
-
-.top-sponsor-link:hover .eyebrow {
-  border-color: var(--home-brand-border-hover);
 }
 
 .top-sponsor-link .eyebrow span {
@@ -127,7 +126,7 @@ const { isDark, lang } = useData()
 
   .top-sponsor-link {
     display: grid;
-    grid-template-columns: auto auto;
+    /* grid-template-columns: auto auto; */
     align-items: center;
     justify-content: center;
     gap: 24px;

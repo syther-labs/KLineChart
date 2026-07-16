@@ -91,7 +91,7 @@ function showParticle() {
         <div class="featured">
           <a
             v-if="featuredSponsors[0]"
-            class="featured-main home-card home-card--interactive"
+            class="featured-main home-card home-card--link"
             :href="featuredSponsors[0].website"
             target="_blank"
             rel="noreferrer"
@@ -110,7 +110,7 @@ function showParticle() {
             <a
               v-for="(item, supporterIndex) in featuredSponsors.slice(1)"
               :key="item.name"
-              class="featured-sub home-card home-card--interactive"
+              class="featured-sub home-card home-card--link"
               :href="item.website"
               target="_blank"
               rel="noreferrer"
@@ -135,7 +135,7 @@ function showParticle() {
             <a
               v-for="item in supportingSponsors"
               :key="item.name"
-              class="supporting-item home-card home-card--interactive"
+              class="supporting-item home-card home-card--link"
               :href="item.website"
               target="_blank"
               rel="noreferrer"
@@ -250,7 +250,6 @@ function showParticle() {
   border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 12%, var(--vp-c-divider));
   background: var(--home-brand-surface-soft);
   color: var(--vp-c-brand-1);
-  transition: border-color .25s ease, background-color .25s ease, transform .25s ease;
 }
 
 .tier-featured {
@@ -267,11 +266,6 @@ function showParticle() {
   color: color-mix(in srgb, var(--vp-c-brand-1) 84%, var(--vp-c-text-2));
   border-color: color-mix(in srgb, var(--vp-c-brand-1) 16%, var(--vp-c-divider));
   background: color-mix(in srgb, var(--vp-c-bg-soft) 56%, var(--vp-c-bg));
-}
-
-.featured-main:hover .tier-featured,
-.featured-sub:hover .tier-supporter {
-  border-color: color-mix(in srgb, var(--vp-c-brand-1) 28%, var(--vp-c-divider));
 }
 
 .featured-logo {

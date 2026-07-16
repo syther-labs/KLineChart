@@ -1,8 +1,11 @@
 <script setup>
+import { ref } from 'vue'
 import { useData } from 'vitepress'
 import AppearanceSetting from './AppearanceSetting.vue'
+import { APPEARANCE_ICON } from './appearance-icon'
 
-const { site, theme } = useData()
+const { site, lang, theme } = useData()
+const open = ref(false)
 </script>
 
 <template>
@@ -13,18 +16,62 @@ const { site, theme } = useData()
       site.appearance !== 'force-auto'
     "
     class="NavScreenAppearance"
+    :class="{ open }"
   >
-    <AppearanceSetting/>
+    <button
+      type="button"
+      class="title"
+      :aria-expanded="open"
+      @click="open = !open">
+      <span class="icon appearance-icon" v-html="APPEARANCE_ICON"/>
+      {{ theme.darkModeSwitchLabel || 'Appearance' }}
+      <span class="vpi-chevron-down icon chevron"/>
+    </button>
+    <div class="content">
+      <AppearanceSetting/>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .NavScreenAppearance {
+  height: 24px;
+  overflow: hidden;
+}
+
+.NavScreenAppearance.open {
+  height: auto;
+}
+
+.title {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  border-radius: 8px;
-  padding: 12px 14px 12px 16px;
-  background-color: var(--vp-c-bg-soft);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--vp-c-text-1);
+}
+
+.icon {
+  font-size: 16px;
+}
+
+.appearance-icon {
+  margin-right: 8px;
+}
+
+.chevron {
+  margin-left: 4px;
+}
+
+.content {
+  padding: 12px 0 0 24px;
+}
+
+.content :deep(.appearance-settings) {
+  width: 100%;
+}
+
+.content :deep(.mode-options button.active) {
+  background-color: var(--vp-c-bg);
 }
 </style>
