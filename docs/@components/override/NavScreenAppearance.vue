@@ -71,7 +71,4 @@ const open = ref(false)
   width: 100%;
 }
 
-.content :deep(.mode-options button.active) {
-  background-color: var(--vp-c-bg);
-}
 </style>

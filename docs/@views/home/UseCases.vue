@@ -1,13 +1,12 @@
 <script setup>
 import { computed } from 'vue'
-import { useData } from 'vitepress'
+import { useData, withBase } from 'vitepress'
 
 import i18n from '../../@i18n'
 import Section from './Section.vue'
-import UseCaseIllustration from './illustrations/UseCaseIllustration.vue'
 import { useInView } from './composables/useInView.js'
 
-const { lang } = useData()
+const { lang, isDark } = useData()
 const { target: casesRef, isVisible } = useInView()
 
 const items = computed(() =>
@@ -37,7 +36,14 @@ const items = computed(() =>
           <p class="summary">{{ item.description }}</p>
         </div>
         <div class="illustration-wrap" aria-hidden="true">
-          <UseCaseIllustration :variant="item.variant" />
+          <img
+            class="illustration"
+            :src="withBase(`/images/use-cases/use-case-${item.variant}-${isDark ? 'dark' : 'light'}.png`)"
+            :alt="''"
+            width="160"
+            height="120"
+            loading="lazy"
+          >
         </div>
       </article>
     </div>
@@ -83,10 +89,13 @@ const items = computed(() =>
   overflow: hidden;
 }
 
-.illustration-wrap :deep(.use-case-illustration) {
+.illustration {
+  display: block;
   width: 100%;
   max-width: 160px;
   height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
 }
 
 @media (min-width: 960px) {
