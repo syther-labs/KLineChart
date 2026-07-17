@@ -21,14 +21,14 @@ export function isRgba (color: string): boolean {
 }
 
 export function isHsla (color: string): boolean {
-  return (/^[hH][Ss][Ll][Aa]\(([\s]*(360｜3[0-5][0-9]|[012]?[0-9][0-9]?)[\s]*,)([\s]*((100|[0-9][0-9]?)%|0)[\s]*,){2}([\s]*(1|1.0|0|0.[0-9])[\s]*)\)$/).test(color)
+  return (/^[hH][Ss][Ll][Aa]\(([\s]*(360|3[0-5][0-9]|[012]?[0-9][0-9]?)[\s]*,)([\s]*((100|[0-9][0-9]?)%|0)[\s]*,){2}([\s]*(1|1.0|0|0.[0-9])[\s]*)\)$/).test(color)
 }
 
 export function isTransparent (color: string): boolean {
   return color === 'transparent' ||
     color === 'none' ||
     /^[rR][gG][Bb][Aa]\(([\s]*(2[0-4][0-9]|25[0-5]|[01]?[0-9][0-9]?)[\s]*,){3}[\s]*0[\s]*\)$/.test(color) ||
-    /^[hH][Ss][Ll][Aa]\(([\s]*(360｜3[0-5][0-9]|[012]?[0-9][0-9]?)[\s]*,)([\s]*((100|[0-9][0-9]?)%|0)[\s]*,){2}([\s]*0[\s]*)\)$/.test(color)
+    /^[hH][Ss][Ll][Aa]\(([\s]*(360|3[0-5][0-9]|[012]?[0-9][0-9]?)[\s]*,)([\s]*((100|[0-9][0-9]?)%|0)[\s]*,){2}([\s]*0[\s]*)\)$/.test(color)
 }
 
 export function rgbToHex (rgb: string): string {
@@ -42,7 +42,7 @@ export function rgbToHex (rgb: string): string {
   const r = parseInt(match[1], 10).toString(16)
   const g = parseInt(match[2], 10).toString(16)
   const b = parseInt(match[3], 10).toString(16)
-  return `#${r.length === 1 ? `0${r}` : r}${g.length === 1 ? `0${r}` : r}${b.length === 1 ? `0${r}` : r}`
+  return `#${r.length === 1 ? `0${r}` : r}${g.length === 1 ? `0${g}` : g}${b.length === 1 ? `0${b}` : b}`
 }
 
 export function hexToRgb (hex: string, alpha?: number): string {
